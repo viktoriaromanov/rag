@@ -3,33 +3,33 @@
 <html lang="ru">
 <head>
     <meta charset="utf-8">
-    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Библиотека "Знание"{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
 </head>
 <body>
     <header>
         <h1> Библиотека "Знание"</h1>
-        <nav>
-          {% if request.user.is_authenticated %}
-            Привет, {{ request.user.username }} |
-            <form method="post" action="{% url 'logout' %}" style="display: inline;">
-              {% csrf_token %}
-              <button type="submit" style="background: none; border: none; color: #ecf0f1; cursor: pointer; text-decoration: underline;">Выйти</button>
-            </form>
-          {% else %}
-            <a href="{% url 'login' %}">Вход</a> |
-            <a href="{% url 'signup' %}">Регистрация</a>
-          {% endif %}
-          <a href="{% url 'home' %}">Главная</a> |
-          <a href="{% url 'book_list' %}">Каталог</a> |
-          <a href="{% url 'about' %}">О библиотеке</a>
-        </nav>
+        {% include "catalog/_nav.html" %}
     </header>
+
+    {% if messages %}
+    <div class="messages">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
     <main>
         {% block content %}{% endblock %}
     </main>
+
     <footer>
-        <p>&copy; 2026 Информационная система библиотеки. Авторы: Белякова Полина | Романова Виктория, Группа Д-Э311</p>
+        <p>&copy; 2026 Информационная система библиотеки. Автор: Белякова П.А. | Романова В.А., Группа Д-Э311</p>
+        <p><small>Проект разработан в учебных целях. Данные демонстрационные.</small></p>
     </footer>
 </body>
 </html>

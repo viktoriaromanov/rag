@@ -1,30 +1,24 @@
-from django.shortcuts import render,redirect, get_object_or_404
-from .models import Book
-from .forms import BookForm
-from django.db.models import Q
-from django.core.paginator import Paginator
-from .forms import ReservationForm
-from .models import Reservation
-from django.contrib.auth.forms import UserCreationForm
-from django.contrib.auth import login
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth import login
+from django.contrib import messages
+from django.db.models import Q, Count
+from django.core.paginator import Paginator
+from django.utils import timezone
+from datetime import timedelta
 
-def signup(request):
-    if request.method == "POST":
-        form = UserCreationForm(request.POST)
-        if form.is_valid():
-            user = form.save()
-            login(request, user)
-            return redirect("book_list")
-    else:
-        form = UserCreationForm()
-    return render(request, "registration/signup.html", {"form": form})
+from .models import Book, Reservation, Reader, Genre
+from .forms import BookForm, ReservationForm, ReaderProfileForm, CustomUserCreationForm
 
-def home(request): 
+def home(request):
     return render(request, 'catalog/home.html')
+
+def about(request):
+    return render(request, 'catalog/about.html')
+
 def book_list(request):
     query = request.GET.get("q", "").strip()
-    books_qs = Book.objects.filter(is_available=True)
+    books_qs = Book.objects.filter(is_available=True).select_related('genre')
 
     if query:
         books_qs = books_qs.filter(
@@ -33,7 +27,7 @@ def book_list(request):
             Q(summary__icontains=query)
         )
 
-    paginator = Paginator(books_qs, 5)  # 5 книг на страницу
+    paginator = Paginator(books_qs, 5)
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
 
@@ -43,21 +37,43 @@ def book_list(request):
         "query": query,
     }
     return render(request, "catalog/book_list.html", context)
-def about(request): 
-    return render(request, 'catalog/about.html')
-@login_required
+
 def book_detail(request, pk):
     book = get_object_or_404(Book, pk=pk, is_available=True)
-    reservations = book.reservations.all().order_by("-created_at")
+    reservations = book.reservations.filter(status__in=['active', 'pending']).order_by('-reservation_date')
 
     if request.method == "POST":
+        if not request.user.is_authenticated:
+            messages.warning(request, 'Для бронирования необходимо войти в систему.')
+            return redirect('login')
+
+        try:
+            reader = request.user.reader_profile
+        except Reader.DoesNotExist:
+            reader = Reader.objects.create(user=request.user)
+
+        if reader.active_reservations_count() >= 3:
+            messages.error(request, 'У вас уже 3 активные брони. Максимум достигнут.')
+            return redirect('book_detail', pk=book.pk)
+
+        existing = reader.reservations.filter(
+            book=book,
+            status__in=['active', 'pending']
+        ).exists()
+
+        if existing:
+            messages.warning(request, 'У вас уже есть бронь на эту книгу.')
+            return redirect('book_detail', pk=book.pk)
+
         form = ReservationForm(request.POST)
         if form.is_valid():
             reservation = form.save(commit=False)
             reservation.book = book
-            reservation.author = request.user 
+            reservation.reader = reader
+            reservation.status = 'pending'
             reservation.save()
-            return redirect("book_detail", pk=book.pk)
+            messages.success(request, '✓ Заявка на бронирование успешно отправлена!')
+            return redirect('book_detail', pk=book.pk)
     else:
         form = ReservationForm()
 
@@ -74,11 +90,11 @@ def book_create(request):
         form = BookForm(request.POST)
         if form.is_valid():
             book = form.save()
+            messages.success(request, f'Книга "{book.title}" успешно добавлена!')
             return redirect("book_detail", pk=book.pk)
     else:
         form = BookForm()
     return render(request, "catalog/book_form.html", {"form": form})
-
 
 @login_required
 def book_edit(request, pk):
@@ -87,6 +103,7 @@ def book_edit(request, pk):
         form = BookForm(request.POST, instance=book)
         if form.is_valid():
             form.save()
+            messages.success(request, f'Книга "{book.title}" обновлена!')
             return redirect("book_detail", pk=book.pk)
     else:
         form = BookForm(instance=book)
@@ -96,17 +113,45 @@ def book_edit(request, pk):
 def book_delete(request, pk):
     book = get_object_or_404(Book, pk=pk)
     if request.method == "POST":
+        title = book.title
         book.delete()
+        messages.success(request, f'Книга "{title}" удалена.')
         return redirect("book_list")
     return render(request, "catalog/book_confirm_delete.html", {"book": book})
 
+@login_required
+def reader_profile(request):
+    reader, created = Reader.objects.get_or_create(user=request.user)
+
+    if request.method == "POST":
+        form = ReaderProfileForm(request.POST, instance=reader)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Профиль обновлён!')
+            return redirect('reader_profile')
+    else:
+        form = ReaderProfileForm(instance=reader)
+
+    active_reservations = reader.reservations.filter(status__in=['active', 'pending']).select_related('book')
+    history = reader.reservations.filter(status__in=['completed', 'cancelled', 'overdue']).select_related('book').order_by('-reservation_date')[:10]
+
+    context = {
+        'reader': reader,
+        'form': form,
+        'active_reservations': active_reservations,
+        'history': history,
+    }
+    return render(request, 'catalog/reader_profile.html', context)
+
 def signup(request):
     if request.method == "POST":
-        form = UserCreationForm(request.POST)
+        form = CustomUserCreationForm(request.POST)
         if form.is_valid():
             user = form.save()
             login(request, user)
+            Reader.objects.get_or_create(user=user)
+            messages.success(request, 'Регистрация успешна! Добро пожаловать.')
             return redirect("book_list")
     else:
-        form = UserCreationForm()
+        form = CustomUserCreationForm()
     return render(request, "registration/signup.html", {"form": form})

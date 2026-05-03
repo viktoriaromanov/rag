@@ -1,0 +1,45 @@
+{% extends "catalog/base.html" %}
+{% block title %}Личный кабинет — {{ reader.user.username }}{% endblock %}
+{% block content %}
+  <h2> Личный кабинет: {{ reader.user.get_full_name|default:reader.user.username }}</h2>
+  
+  <div class="profile-section">
+    <h3> Контактная информация</h3>
+    <form method="post">
+      {% csrf_token %}
+      {{ form.as_p }}
+      <button type="submit" class="btn btn-primary">Сохранить</button>
+    </form>
+  </div>
+
+  <hr>
+  <h3> Активные брони ({{ active_reservations.count }})</h3>
+  {% if active_reservations %}
+    <ul>
+    {% for res in active_reservations %}
+      <li>
+        <a href="{% url 'book_detail' pk=res.book.pk %}">{{ res.book.title }}</a> — {{ res.get_status_display }}
+        {% if res.due_date %}<br>Вернуть до: {{ res.due_date|date:"d.m.Y" }}{% endif %}
+        {% if res.notes %}<br>Заметка: {{ res.notes }}{% endif %}
+      </li>
+    {% endfor %}
+    </ul>
+  {% else %}
+    <p>У вас нет активных бронирований.</p>
+  {% endif %}
+
+  <hr>
+  <h3> История бронирований</h3>
+  {% if history %}
+    <ul>
+    {% for res in history %}
+      <li>
+        {{ res.book.title }} — {{ res.get_status_display }} ({{ res.reservation_date|date:"d.m.Y" }})
+        {% if res.return_date %} | Возврат: {{ res.return_date|date:"d.m.Y" }}{% endif %}
+      </li>
+    {% endfor %}
+    </ul>
+  {% else %}
+    <p>История пуста.</p>
+  {% endif %}
+{% endblock %}

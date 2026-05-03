@@ -1,4 +1,15 @@
 <nav>
+  {% if request.user.is_authenticated %}
+    Привет, {{ request.user.username }} |
+    <a href="{% url 'reader_profile' %}">Профиль</a> |
+    <form method="post" action="{% url 'logout' %}" style="display: inline;">
+      {% csrf_token %}
+      <button type="submit" class="nav-btn">Выйти</button>
+    </form>
+  {% else %}
+    <a href="{% url 'login' %}">Вход</a> |
+    <a href="{% url 'signup' %}">Регистрация</a>
+  {% endif %}
   <a href="{% url 'home' %}">Главная</a> |
   <a href="{% url 'book_list' %}">Каталог</a> |
   <a href="{% url 'about' %}">О библиотеке</a>

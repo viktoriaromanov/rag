@@ -3,48 +3,59 @@
 {% block content %}
   <h2> {{ book.title }}</h2>
   <p><strong>Автор:</strong> {{ book.author }}</p>
-  <p><strong>Жанр:</strong> {{ book.genre }}</p>
+  <p><strong>Жанр:</strong> {{ book.genre.name|default:"Не указан" }}</p>
   <p><strong>ISBN:</strong> {{ book.isbn|default:"Не указан" }}</p>
   {% if book.summary %}
     <p><strong>Описание:</strong> {{ book.summary }}</p>
   {% endif %}
   <p><small>Добавлено: {{ book.added_at|date:"d.m.Y" }}</small></p>
-  <hr>
-<h3> Бронирования ({{ reservations.count }})</h3>
-{% if reservations %}
-  <ul>
-  {% for res in reservations %}
-    <li style="margin-bottom: 8px;">
-      <strong>{{ res.reader_name }}</strong> <small>{{ res.created_at|date:"d.m.Y H:i" }}</small><br>
-      {{ res.text }}
-    </li>
-  {% endfor %}
-  </ul>
-{% else %}
-  <p>Пока нет бронирований. Оставьте заявку первым!</p>
-{% endif %}
+  
+  <p>
+    <strong>Статус:</strong>
+    {% if book.is_available %}
+      <span class="status-available">✓ Доступна</span>
+    {% else %}
+      <span class="status-unavailable">✗ Недоступна</span>
+    {% endif %}
+  </p>
 
-<hr>
-{% if user.is_authenticated %}
+  <hr>
+  <h3> Активные брони ({{ reservations.count }})</h3>
+  {% if reservations %}
+    <ul>
+    {% for res in reservations %}
+      <li>
+        <strong>{{ res.reader }}</strong> <small>{{ res.reservation_date|date:"d.m.Y H:i" }}</small><br>
+        Статус: {{ res.get_status_display }}
+        {% if res.notes %}<br>Заметка: {{ res.notes }}{% endif %}
+      </li>
+    {% endfor %}
+    </ul>
+  {% else %}
+    <p>Пока нет бронирований.</p>
+  {% endif %}
+
+  <hr>
+  {% if user.is_authenticated %}
     <h3> Оставить заявку на бронь</h3>
-    <form method="post" style="max-width: 500px;">
+    <form method="post">
       {% csrf_token %}
       {{ form.as_p }}
-      <button type="submit" style="padding: 8px 16px; background: #27ae60; color: white; border: none; cursor: pointer;">
-        Отправить заявку
-      </button>
+      <button type="submit" class="btn btn-success">Отправить заявку</button>
     </form>
+    <p><small>Максимум 3 активные брони. Срок выдачи — 14 дней.</small></p>
   {% else %}
-    <p>
-       Для бронирования необходимо 
-      <a href="{% url 'login' %}">войти</a> или 
-      <a href="{% url 'signup' %}">зарегистрироваться</a>.
-    </p>
+    <div class="alert alert-info">
+       Для бронирования необходимо <a href="{% url 'login' %}">войти</a> или <a href="{% url 'signup' %}">зарегистрироваться</a>.
+    </div>
   {% endif %}
+
+  <hr>
   <p>
-  <a href="{% url 'book_list' %}">← К каталогу</a> |
-  <a href="{% url 'book_edit' pk=book.pk %}"> Редактировать</a> |
-  <a href="{% url 'book_delete' pk=book.pk %}" style="color: #e74c3c;"> Удалить</a>
-</p>
-<p><a href="{% url 'book_create' %}" style="display: inline-block; margin-top: 10px;">➕ Добавить новую книгу</a></p>
+    <a href="{% url 'book_list' %}" class="btn btn-secondary">← К каталогу</a>
+    {% if user.is_staff %}
+      | <a href="{% url 'book_edit' pk=book.pk %}" class="btn btn-warning"> Редактировать</a>
+      | <a href="{% url 'book_delete' pk=book.pk %}" class="btn btn-danger"> Удалить</a>
+    {% endif %}
+  </p>
 {% endblock %}

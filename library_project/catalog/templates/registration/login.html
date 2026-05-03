@@ -2,10 +2,12 @@
 {% block title %}Вход в систему{% endblock %}
 {% block content %}
   <h2> Вход</h2>
-  <form method="post" style="max-width: 400px;">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit" style="padding: 10px; background: #2c3e50; color: white; border: none;">Войти</button>
-  </form>
-  <p>Нет аккаунта? <a href="{% url 'signup' %}">Зарегистрироваться</a></p>
+  <div class="auth-form">
+    <form method="post">
+      {% csrf_token %}
+      {{ form.as_p }}
+      <button type="submit" class="btn btn-primary">Войти</button>
+    </form>
+    <p>Нет аккаунта? <a href="{% url 'signup' %}">Зарегистрироваться</a></p>
+  </div>
 {% endblock %}
