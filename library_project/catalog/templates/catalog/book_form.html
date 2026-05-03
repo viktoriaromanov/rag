@@ -1,0 +1,13 @@
+{% extends "catalog/base.html" %}
+{% block title %}{% if is_edit %}Редактирование{% else %}Добавление{% endif %} книги{% endblock %}
+{% block content %}
+  <h2>{% if is_edit %}📝 Редактировать: {{ book.title }}{% else %} Новая книга{% endif %}</h2>
+  <form method="post" style="max-width: 500px;">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" style="padding: 10px 20px; background: #2c3e50; color: white; border: none; cursor: pointer;">
+      {% if is_edit %}Сохранить изменения{% else %}Создать{% endif %}
+    </button>
+  </form>
+  <p><a href="{% url 'book_list' %}">← К каталогу</a></p>
+{% endblock %}
