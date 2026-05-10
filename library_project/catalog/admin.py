@@ -11,10 +11,8 @@ class BookAdmin(admin.ModelAdmin):
     list_display = ('title', 'author', 'genre', 'is_available', 'added_at')
     list_filter = ('is_available', 'genre', 'added_at')
     search_fields = ('title', 'author', 'isbn')
-    fieldsets = (
-        ('Основная информация', {'fields': ('title', 'author', 'isbn', 'genre')}),
-        ('Статус и описание', {'fields': ('is_available', 'summary')}),
-    )
+    prepopulated_fields = {'slug': ('title',)} 
+    readonly_fields = ('added_at',)
 
 @admin.register(Reader)
 class ReaderAdmin(admin.ModelAdmin):

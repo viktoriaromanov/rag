@@ -1,45 +1,93 @@
 {% extends "catalog/base.html" %}
-{% block title %}Личный кабинет — {{ reader.user.username }}{% endblock %}
+{% block title %}Личный кабинет{% endblock %}
+
 {% block content %}
-  <h2> Личный кабинет: {{ reader.user.get_full_name|default:reader.user.username }}</h2>
-  
-  <div class="profile-section">
-    <h3> Контактная информация</h3>
-    <form method="post">
-      {% csrf_token %}
-      {{ form.as_p }}
-      <button type="submit" class="btn btn-primary">Сохранить</button>
-    </form>
-  </div>
+<h2> Личный кабинет: {{ user.get_full_name|default:user.username }}</h2>
 
-  <hr>
-  <h3> Активные брони ({{ active_reservations.count }})</h3>
-  {% if active_reservations %}
-    <ul>
-    {% for res in active_reservations %}
-      <li>
-        <a href="{% url 'book_detail' pk=res.book.pk %}">{{ res.book.title }}</a> — {{ res.get_status_display }}
-        {% if res.due_date %}<br>Вернуть до: {{ res.due_date|date:"d.m.Y" }}{% endif %}
-        {% if res.notes %}<br>Заметка: {{ res.notes }}{% endif %}
-      </li>
-    {% endfor %}
-    </ul>
-  {% else %}
-    <p>У вас нет активных бронирований.</p>
-  {% endif %}
-
-  <hr>
-  <h3> История бронирований</h3>
-  {% if history %}
-    <ul>
-    {% for res in history %}
-      <li>
-        {{ res.book.title }} — {{ res.get_status_display }} ({{ res.reservation_date|date:"d.m.Y" }})
-        {% if res.return_date %} | Возврат: {{ res.return_date|date:"d.m.Y" }}{% endif %}
-      </li>
-    {% endfor %}
-    </ul>
-  {% else %}
-    <p>История пуста.</p>
-  {% endif %}
+<div class="row">
+    <div class="col-md-4 mb-4">
+        <div class="card">
+            <div class="card-body text-center">
+                {% if user.profile.avatar %}
+                    <img src="{{ user.profile.avatar.url }}" alt="Аватар" class="rounded-circle mb-3" style="width: 150px; height: 150px; object-fit: cover;">
+                {% else %}
+                    <div class="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 150px; height: 150px; font-size: 4rem;">
+                        <i class="bi bi-person"></i>
+                    </div>
+                {% endif %}
+                <h5>{{ user.get_full_name|default:user.username }}</h5>
+                <p class="text-muted">{{ user.email }}</p>
+                <a href="{% url 'accounts:profile_edit' %}" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-pencil"></i> Редактировать профиль
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"> Активные бронирования ({{ active_reservations.count }})</h5>
+            </div>
+            <div class="card-body">
+                {% if active_reservations %}
+                <ul class="list-group list-group-flush">
+                    {% for res in active_reservations %}
+                    <li class="list-group-item">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="mb-1">
+                                    <a href="{{ res.book.get_absolute_url }}" class="text-decoration-none">
+                                        {{ res.book.title }}
+                                    </a>
+                                </h6>
+                                <p class="mb-1 text-muted small">{{ res.book.author }}</p>
+                                <span class="badge bg-{{ res.status|yesno:'success,secondary' }}">
+                                    {{ res.get_status_display }}
+                                </span>
+                                {% if res.due_date %}
+                                <small class="text-muted d-block mt-1">
+                                    Вернуть до: {{ res.due_date|date:"d.m.Y" }}
+                                </small>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-muted mb-0">У вас нет активных бронирований.</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"> История бронирований</h5>
+            </div>
+            <div class="card-body">
+                {% if history %}
+                <ul class="list-group list-group-flush">
+                    {% for res in history %}
+                    <li class="list-group-item">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="mb-1">{{ res.book.title }}</h6>
+                                <p class="mb-1 text-muted small">{{ res.book.author }}</p>
+                                <span class="badge bg-secondary">{{ res.get_status_display }}</span>
+                                <small class="text-muted d-block mt-1">
+                                    {{ res.reservation_date|date:"d.m.Y" }}
+                                </small>
+                            </div>
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-muted mb-0">История пуста.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}

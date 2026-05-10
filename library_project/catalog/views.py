@@ -38,8 +38,8 @@ def book_list(request):
     }
     return render(request, "catalog/book_list.html", context)
 
-def book_detail(request, pk):
-    book = get_object_or_404(Book, pk=pk, is_available=True)
+def book_detail(request, slug):
+    book = get_object_or_404(Book, slug=slug, is_available=True)
     reservations = book.reservations.filter(status__in=['active', 'pending']).order_by('-reservation_date')
 
     if request.method == "POST":
@@ -54,7 +54,7 @@ def book_detail(request, pk):
 
         if reader.active_reservations_count() >= 3:
             messages.error(request, 'У вас уже 3 активные брони. Максимум достигнут.')
-            return redirect('book_detail', pk=book.pk)
+            return redirect('catalog:book_detail', slug=book.slug)
 
         existing = reader.reservations.filter(
             book=book,
@@ -63,7 +63,7 @@ def book_detail(request, pk):
 
         if existing:
             messages.warning(request, 'У вас уже есть бронь на эту книгу.')
-            return redirect('book_detail', pk=book.pk)
+            return redirect('catalog:book_detail', slug=book.slug)
 
         form = ReservationForm(request.POST)
         if form.is_valid():
@@ -73,7 +73,7 @@ def book_detail(request, pk):
             reservation.status = 'pending'
             reservation.save()
             messages.success(request, '✓ Заявка на бронирование успешно отправлена!')
-            return redirect('book_detail', pk=book.pk)
+            return redirect('catalog:book_detail', slug=book.slug)
     else:
         form = ReservationForm()
 
@@ -85,33 +85,60 @@ def book_detail(request, pk):
     return render(request, "catalog/book_detail.html", context)
 
 @login_required
+def reader_profile(request):
+    """Личный кабинет читателя"""
+    # Получаем профиль текущего пользователя
+    from accounts.models import Profile
+    profile, _ = Profile.objects.get_or_create(user=request.user)
+    
+    # Получаем активные брони
+    from .models import Reservation
+    active_reservations = Reservation.objects.filter(
+        reader__user=request.user,
+        status__in=['active', 'pending']
+    ).select_related('book')
+    
+    # Получаем историю бронирований
+    history = Reservation.objects.filter(
+        reader__user=request.user,
+        status__in=['completed', 'cancelled', 'overdue']
+    ).select_related('book').order_by('-reservation_date')[:10]
+    
+    context = {
+        'profile': profile,
+        'active_reservations': active_reservations,
+        'history': history,
+    }
+    return render(request, 'catalog/reader_profile.html', context)
+
+@login_required
 def book_create(request):
     if request.method == "POST":
         form = BookForm(request.POST)
         if form.is_valid():
             book = form.save()
             messages.success(request, f'Книга "{book.title}" успешно добавлена!')
-            return redirect("book_detail", pk=book.pk)
+            return redirect("catalog:book_detail", slug=book.slug)
     else:
         form = BookForm()
     return render(request, "catalog/book_form.html", {"form": form})
 
 @login_required
-def book_edit(request, pk):
-    book = get_object_or_404(Book, pk=pk)
+def book_edit(request, slug):
+    book = get_object_or_404(Book, slug=slug)
     if request.method == "POST":
         form = BookForm(request.POST, instance=book)
         if form.is_valid():
             form.save()
             messages.success(request, f'Книга "{book.title}" обновлена!')
-            return redirect("book_detail", pk=book.pk)
+            return redirect("catalog:book_detail", slug=book.slug)
     else:
         form = BookForm(instance=book)
     return render(request, "catalog/book_form.html", {"form": form, "is_edit": True, "book": book})
 
 @login_required
-def book_delete(request, pk):
-    book = get_object_or_404(Book, pk=pk)
+def book_delete(request, slug):
+    book = get_object_or_404(Book, slug=slug)
     if request.method == "POST":
         title = book.title
         book.delete()

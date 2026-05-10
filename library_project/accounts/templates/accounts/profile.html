@@ -1,0 +1,83 @@
+{% extends "catalog/base.html" %}
+{% block title %}Мой профиль{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-4 text-center mb-4">
+        <div class="card">
+            <div class="card-body">
+                {% if profile.avatar %}
+                    <img src="{{ profile.avatar.url }}" alt="Аватар" class="avatar-medium mb-3">
+                {% else %}
+                    <div class="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 150px; height: 150px; font-size: 4rem;">
+                        <i class="bi bi-person"></i>
+                    </div>
+                {% endif %}
+                <h4>{{ user.get_full_name|default:user.username }}</h4>
+                <p class="text-muted">@{{ user.username }}</p>
+                <p class="mb-1"><i class="bi bi-envelope"></i> {{ user.email }}</p>
+                {% if profile.phone %}
+                <p class="mb-1"><i class="bi bi-telephone"></i> {{ profile.phone }}</p>
+                {% endif %}
+                <p class="mb-0"><i class="bi bi-calendar"></i> Регистрация: {{ profile.created_at|date:"d.m.Y" }}</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-8">
+        <!-- Личная информация -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-person"></i> Личная информация</h5>
+            </div>
+            <div class="card-body">
+                <dl class="row">
+                    <dt class="col-sm-4">Имя</dt>
+                    <dd class="col-sm-8">{{ user.first_name|default:"—" }}</dd>
+                    
+                    <dt class="col-sm-4">Фамилия</dt>
+                    <dd class="col-sm-8">{{ user.last_name|default:"—" }}</dd>
+                    
+                    <dt class="col-sm-4">Email</dt>
+                    <dd class="col-sm-8">{{ user.email }}</dd>
+                    
+                    <dt class="col-sm-4">Телефон</dt>
+                    <dd class="col-sm-8">{{ profile.phone|default:"—" }}</dd>
+                    
+                    <dt class="col-sm-4">Адрес</dt>
+                    <dd class="col-sm-8">{{ profile.address|default:"—" }}</dd>
+                    
+                    <dt class="col-sm-4">Дата рождения</dt>
+                    <dd class="col-sm-8">{{ profile.birth_date|date:"d.m.Y"|default:"—" }}</dd>
+                </dl>
+                
+                {% if profile.bio %}
+                <hr>
+                <h6>О себе:</h6>
+                <p>{{ profile.bio }}</p>
+                {% endif %}
+            </div>
+            <div class="card-footer">
+                <a href="{% url 'accounts:profile_edit' %}" class="btn btn-primary">
+                    <i class="bi bi-pencil"></i> Редактировать профиль
+                </a>
+            </div>
+        </div>
+        
+        <!-- Быстрые ссылки -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-link-45deg"></i> Быстрые ссылки</h5>
+            </div>
+            <div class="card-body">
+                <a href="{% url 'catalog:reader_profile' %}" class="btn btn-outline-primary me-2">
+                    <i class="bi bi-card-list"></i> Мои бронирования
+                </a>
+                <a href="{% url 'catalog:book_list' %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-book"></i> Каталог книг
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -41,6 +41,8 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "catalog",
+    'accounts',
+    'taggit',
 ]
 
 MIDDLEWARE = [
@@ -120,5 +122,22 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 
-LOGIN_REDIRECT_URL = "book_list"
-LOGOUT_REDIRECT_URL = "book_list"
+LOGIN_REDIRECT_URL = "catalog:book_list"
+LOGOUT_REDIRECT_URL = "catalog:book_list"
+
+LOGIN_REDIRECT_URL = "accounts:profile"
+LOGOUT_REDIRECT_URL = "accounts:profile"
+
+# Настройки медиа-файлов
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
+# Настройки для аватаров
+MAX_UPLOAD_SIZE = 5 * 1024 * 1024  # 5 MB
+
+CSRF_TRUSTED_ORIGINS = [
+    'https://localhost:8000',
+    'https://127.0.0.1:8000',
+    'http://localhost:8000',
+    'http://127.0.0.1:8000',
+]

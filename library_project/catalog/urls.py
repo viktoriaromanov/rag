@@ -1,14 +1,16 @@
 from django.urls import path
 from . import views
 
+app_name = 'catalog'
+
 urlpatterns = [
     path('', views.home, name='home'),
     path('books/', views.book_list, name='book_list'),
     path('about/', views.about, name='about'),
-    path('books/<int:pk>/', views.book_detail, name='book_detail'),
     path('books/create/', views.book_create, name='book_create'),
-    path('books/<int:pk>/edit/', views.book_edit, name='book_edit'),
-    path('books/<int:pk>/delete/', views.book_delete, name='book_delete'),
+    path('books/<slug:slug>/', views.book_detail, name='book_detail'),
+    path('books/<slug:slug>/edit/', views.book_edit, name='book_edit'),
+    path('books/<slug:slug>/delete/', views.book_delete, name='book_delete'),
     path('profile/', views.reader_profile, name='reader_profile'),
     path('accounts/signup/', views.signup, name='signup'),
 ]

@@ -1,7 +1,7 @@
 {% extends "catalog/base.html" %}
 {% block title %}{% if is_edit %}Редактирование{% else %}Добавление{% endif %} книги{% endblock %}
 {% block content %}
-  <h2>{% if is_edit %}📝 Редактировать: {{ book.title }}{% else %} Новая книга{% endif %}</h2>
+  <h2>{% if is_edit %} Редактировать: {{ book.title }}{% else %} Новая книга{% endif %}</h2>
   <form method="post" style="max-width: 500px;">
     {% csrf_token %}
     {{ form.as_p }}
@@ -9,5 +9,5 @@
       {% if is_edit %}Сохранить изменения{% else %}Создать{% endif %}
     </button>
   </form>
-  <p><a href="{% url 'book_list' %}">← К каталогу</a></p>
+  <p><a href="{% url 'catalog:book_list' %}">← К каталогу</a></p>
 {% endblock %}

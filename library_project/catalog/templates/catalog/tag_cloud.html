@@ -1,0 +1,10 @@
+<div class="card mb-3">
+    <div class="card-header">️ Популярные теги</div>
+    <div class="card-body">
+        {% for tag in tags %}
+        <span class="badge bg-secondary me-1">{{ tag.name }}</span>
+        {% empty %}
+        <p class="text-muted small">Тегов нет</p>
+        {% endfor %}
+    </div>
+</div>

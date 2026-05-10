@@ -8,6 +8,6 @@
       {{ form.as_p }}
       <button type="submit" class="btn btn-primary">Войти</button>
     </form>
-    <p>Нет аккаунта? <a href="{% url 'signup' %}">Зарегистрироваться</a></p>
+    <p>Нет аккаунта? <a href="{% url 'accounts:signup' %}">Зарегистрироваться</a></p>
   </div>
 {% endblock %}

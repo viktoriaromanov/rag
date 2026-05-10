@@ -2,6 +2,50 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
 from datetime import timedelta
+from django.utils.text import slugify
+from django.urls import reverse
+from taggit.managers import TaggableManager
+
+class Book(models.Model):
+    title = models.CharField("Название", max_length=200)
+    slug = models.SlugField(
+        max_length=200, 
+        unique=True, 
+        blank=True,
+        null=True  # Важно для существующих книг
+    )
+    author = models.CharField("Автор", max_length=150)
+    isbn = models.CharField("ISBN", max_length=17, unique=True, blank=True, null=True)
+    genre = models.ForeignKey("Genre", on_delete=models.SET_NULL, null=True, verbose_name="Жанр", related_name="books")
+    is_available = models.BooleanField("Доступна", default=True)
+    summary = models.TextField("Описание", blank=True)
+    added_at = models.DateTimeField("Добавлено", auto_now_add=True)
+    
+    tags = TaggableManager(blank=True, verbose_name="Теги")
+
+    def save(self, *args, **kwargs):
+        # Если slug пустой, создаем его
+        if not self.slug:
+            from django.utils.text import slugify
+            base_slug = slugify(self.title, allow_unicode=False)
+            slug = base_slug
+            counter = 1
+            # Проверяем уникальность
+            while Book.objects.filter(slug=slug).exclude(pk=self.pk).exists():
+                slug = f"{base_slug}-{counter}"
+                counter += 1
+            self.slug = slug
+        
+        super().save(*args, **kwargs)
+
+    def get_absolute_url(self):
+        return reverse('catalog:book_detail', kwargs={'slug': self.slug})
+        
+    def __str__(self):
+        return self.title
+    
+    class Meta:
+        ordering = ["-added_at"]
 
 class Genre(models.Model):
     name = models.CharField("Название жанра", max_length=100, unique=True)
@@ -13,24 +57,7 @@ class Genre(models.Model):
     class Meta:
         verbose_name = "Жанр"
         verbose_name_plural = "Жанры"
-
-class Book(models.Model):
-    title = models.CharField("Название", max_length=200)
-    author = models.CharField("Автор", max_length=150)
-    isbn = models.CharField("ISBN", max_length=17, unique=True, blank=True, null=True)
-    genre = models.ForeignKey(Genre, on_delete=models.SET_NULL, null=True, verbose_name="Жанр", related_name="books")
-    is_available = models.BooleanField("Доступна", default=True)
-    summary = models.TextField("Описание", blank=True)
-    added_at = models.DateTimeField("Добавлено", auto_now_add=True)
-
-    def __str__(self):
-        return f"{self.title} — {self.author}"
-
-    class Meta:
-        ordering = ["-added_at"]
-        verbose_name = "Книга"
-        verbose_name_plural = "Книги"
-
+        
 class Reader(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, verbose_name="Пользователь", related_name="reader_profile")
     phone = models.CharField("Телефон", max_length=20, blank=True)

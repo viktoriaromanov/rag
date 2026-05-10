@@ -7,6 +7,6 @@
   <form method="post">
     {% csrf_token %}
     <button type="submit" style="background: #e74c3c; color: white; padding: 10px; border: none; cursor: pointer;">Да, удалить</button>
-    <a href="{% url 'book_detail' pk=book.pk %}" style="margin-left: 10px;">Отмена</a>
+    <a href="{% url 'catalog:book_detail' pk=book.pk %}" style="margin-left: 10px;">Отмена</a>
   </form>
 {% endblock %}

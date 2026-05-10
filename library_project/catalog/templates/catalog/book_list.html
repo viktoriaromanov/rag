@@ -6,18 +6,28 @@
   <!-- Форма поиска -->
   <form method="get" style="margin-bottom: 20px;">
     <input type="text" name="q" placeholder="Поиск по названию, автору или описанию"
-           value="{{ request.GET.q }}" style="padding: 8px; width: 60%;">
+           value="{{ request.GET.q|default:'' }}" style="padding: 8px; width: 60%;">
     <button type="submit" style="padding: 8px 12px;">Искать</button>
   </form>
 
-  {% if books %}
-    <ul>
-    {% for book in books %}
-      <li style="margin-bottom: 15px; padding: 10px; border: 1px solid #eee; border-radius: 6px;">
-        <h3><a href="{% url 'book_detail' pk=book.pk %}">{{ book.title }}</a></h3>
-        <p>{{ book.author }} | {{ book.genre }}</p>
-        {% if book.summary %}
-          <p>{{ book.summary|truncatechars:120 }}</p>
+  <!-- Исправление 1: Используем page_obj (объект пагинации) вместо books -->
+  {% if page_obj %}
+    <!-- Исправление 2: Добавлен класс list-group для Bootstrap -->
+    <ul class="list-group">
+    {% for book in page_obj %}
+      <li class="list-group-item">
+        {% if book.slug %}
+            <h3>
+                <a href="{{ book.get_absolute_url }}" class="text-decoration-none">
+                    {{ book.title }}
+                </a>
+            </h3>
+            <!-- Исправление 3: Выводим имя жанра -->
+            <p>{{ book.author }} | {{ book.genre.name|default:"Без жанра" }}</p>
+        {% else %}
+            <h3>{{ book.title }}</h3>
+            <p class="text-muted">{{ book.author }} | {{ book.genre.name|default:"Без жанра" }}</p>
+            <small class="text-warning">⚠️ Нет slug (ссылка не активна)</small>
         {% endif %}
       </li>
     {% endfor %}
@@ -26,16 +36,20 @@
     <p>Книги не найдены.</p>
   {% endif %}
 
+  <!-- Пагинация -->
   {% if page_obj.has_other_pages %}
     <nav style="margin-top: 20px;">
       {% if page_obj.has_previous %}
-        <a href="?page=1{% if query %}&q={{ query }}{% endif %}">&laquo; Первая</a>
-        <a href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query }}{% endif %}">Предыдущая</a>
+        <!-- Исправление 4: Используем request.GET.q для сохранения поиска -->
+        <a href="?page=1{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">&laquo; Первая</a>
+        <a href="?page={{ page_obj.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">Предыдущая</a>
       {% endif %}
+      
       <span>Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}</span>
+      
       {% if page_obj.has_next %}
-        <a href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}">Следующая</a>
-        <a href="?page={{ page_obj.paginator.num_pages }}{% if query %}&q={{ query }}{% endif %}">Последняя &raquo;</a>
+        <a href="?page={{ page_obj.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">Следующая</a>
+        <a href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">Последняя &raquo;</a>
       {% endif %}
     </nav>
   {% endif %}
