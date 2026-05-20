@@ -6,6 +6,7 @@ from django.db.models import Q, Count
 from django.core.paginator import Paginator
 from django.utils import timezone
 from datetime import timedelta
+from django.utils.text import slugify
 
 from .models import Book, Reservation, Reader, Genre
 from .forms import BookForm, ReservationForm, ReaderProfileForm, CustomUserCreationForm
@@ -116,7 +117,23 @@ def book_create(request):
     if request.method == "POST":
         form = BookForm(request.POST)
         if form.is_valid():
-            book = form.save()
+            book = form.save(commit=False)
+            
+            if not book.slug:
+                base_slug = slugify(book.title, allow_unicode=False)
+                
+                if not base_slug:
+                    book.save()
+                    base_slug = f"book-{book.pk}"
+                
+                slug = base_slug
+                counter = 1
+                while Book.objects.filter(slug=slug).exclude(pk=book.pk).exists():
+                    slug = f"{base_slug}-{counter}"
+                    counter += 1
+                book.slug = slug
+            
+            book.save()  
             messages.success(request, f'Книга "{book.title}" успешно добавлена!')
             return redirect("catalog:book_detail", slug=book.slug)
     else:

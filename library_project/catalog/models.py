@@ -24,18 +24,32 @@ class Book(models.Model):
     tags = TaggableManager(blank=True, verbose_name="Теги")
 
     def save(self, *args, **kwargs):
-        # Если slug пустой, создаем его
+        # Генерируем slug ТОЛЬКО если его нет
         if not self.slug:
-            from django.utils.text import slugify
+            # Создаём базовый slug из названия (только латиница)
             base_slug = slugify(self.title, allow_unicode=False)
+            
+            #  Если slugify вернул пустую строку (кириллица), создаём запасной вариант
+            if not base_slug:
+                # Если книга уже имеет ID (сохранена), используем его
+                if self.pk:
+                    base_slug = f"book-{self.pk}"
+                else:
+                    # Если книга новая, используем хеш от названия как временный идентификатор
+                    import hashlib
+                    base_slug = f"book-{hashlib.md5(self.title.encode('utf-8')).hexdigest()[:8]}"
+            
+            # Проверяем уникальность и добавляем суффикс при необходимости
             slug = base_slug
             counter = 1
-            # Проверяем уникальность
             while Book.objects.filter(slug=slug).exclude(pk=self.pk).exists():
                 slug = f"{base_slug}-{counter}"
                 counter += 1
+            
+            # Присваиваем итоговый slug
             self.slug = slug
         
+        # Вызываем оригинальный save() для сохранения в БД
         super().save(*args, **kwargs)
 
     def get_absolute_url(self):

@@ -8,7 +8,13 @@ User = get_user_model()
 class BookForm(forms.ModelForm):
     class Meta:
         model = Book
-        fields = ["title", "author", "isbn", "genre", "summary", "is_available"]
+        fields = ['title', 'author', 'isbn', 'genre', 'summary', 'is_available', 'tags']  
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if 'slug' in self.fields:
+            self.fields['slug'].required = False
+            self.fields['slug'].widget.attrs['readonly'] = True  
 
 class ReservationForm(forms.ModelForm):
     class Meta:
