@@ -261,7 +261,7 @@ def signup(request):
             login(request, user)
             Reader.objects.get_or_create(user=user)
             messages.success(request, 'Регистрация успешна! Добро пожаловать.')
-            return redirect("book_list")
+            return redirect("catalog:book_list")
     else:
         form = CustomUserCreationForm()
     return render(request, "registration/signup.html", {"form": form})
