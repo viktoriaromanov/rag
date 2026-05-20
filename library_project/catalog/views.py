@@ -7,12 +7,23 @@ from django.core.paginator import Paginator
 from django.utils import timezone
 from datetime import timedelta
 from django.utils.text import slugify
+from taggit.models import Tag 
 
-from .models import Book, Reservation, Reader, Genre
+from .models import Book, Reservation, Reader, Genre, Event
 from .forms import BookForm, ReservationForm, ReaderProfileForm, CustomUserCreationForm
 
 def home(request):
-    return render(request, 'catalog/home.html')
+    events = Event.objects.all()[:4] 
+    
+    context = {
+        'events': events,
+    }
+    return render(request, 'catalog/home.html', context)
+
+def event_detail(request, slug):
+    from .models import Event # Импорт модели
+    event = get_object_or_404(Event, slug=slug)
+    return render(request, 'catalog/event_detail.html', {'event': event})
 
 def about(request):
     return render(request, 'catalog/about.html')
@@ -31,13 +42,50 @@ def book_list(request):
     paginator = Paginator(books_qs, 5)
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
+    
+    tags = Tag.objects.annotate(
+        num_times=Count('taggit_taggeditem_items')
+    ).filter(num_times__gt=0).order_by('-num_times')[:10]
 
     context = {
         "books": page_obj,
         "page_obj": page_obj,
         "query": query,
+        "tags": tags,
     }
     return render(request, "catalog/book_list.html", context)
+
+
+def books_by_tag(request, tag_slug):
+    """Отображение книг с определённым тегом"""
+    tag = get_object_or_404(Tag, slug=tag_slug)
+    
+    books_qs = Book.objects.filter(
+        tags__slug=tag_slug,
+        is_available=True
+    ).select_related('genre')
+    
+    query = request.GET.get("q", "").strip()
+    if query:
+        books_qs = books_qs.filter(
+            Q(title__icontains=query) |
+            Q(author__icontains=query) |
+            Q(summary__icontains=query)
+        )
+    
+    # Пагинация
+    paginator = Paginator(books_qs, 5)
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        "books": page_obj,
+        "page_obj": page_obj,
+        "query": query,
+        "tag": tag,
+    }
+    return render(request, "catalog/books_by_tag.html", context)
+
 
 def book_detail(request, slug):
     book = get_object_or_404(Book, slug=slug, is_available=True)
@@ -86,29 +134,47 @@ def book_detail(request, slug):
     return render(request, "catalog/book_detail.html", context)
 
 @login_required
+@login_required
 def reader_profile(request):
     """Личный кабинет читателя"""
-    # Получаем профиль текущего пользователя
     from accounts.models import Profile
+    from .models import Reservation, Fine
+    from django.db.models import Sum
+    
     profile, _ = Profile.objects.get_or_create(user=request.user)
     
+    # Получаем читателя
+    try:
+        reader = request.user.reader_profile
+    except:
+        reader = None
+    
     # Получаем активные брони
-    from .models import Reservation
     active_reservations = Reservation.objects.filter(
         reader__user=request.user,
         status__in=['active', 'pending']
     ).select_related('book')
     
-    # Получаем историю бронирований
+    # Получаем историю
     history = Reservation.objects.filter(
         reader__user=request.user,
         status__in=['completed', 'cancelled', 'overdue']
     ).select_related('book').order_by('-reservation_date')[:10]
     
+    if reader:
+        fines = Fine.objects.filter(reservation__reader=reader, is_paid=False)
+        total_debt = fines.aggregate(total=Sum('amount'))['total'] or 0
+    else:
+        fines = Fine.objects.none()
+        total_debt = 0
+    
     context = {
         'profile': profile,
         'active_reservations': active_reservations,
         'history': history,
+        'fines': fines,
+        'unpaid_fines': fines,
+        'total_debt': total_debt,
     }
     return render(request, 'catalog/reader_profile.html', context)
 

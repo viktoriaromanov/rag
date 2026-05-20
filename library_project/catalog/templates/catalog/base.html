@@ -1,5 +1,5 @@
 {% load static %}
-{% load library_tags %}  <!-- Ваши кастомные теги -->
+{% load library_tags %}
 
 <!DOCTYPE html>
 <html lang="ru">
@@ -58,6 +58,11 @@
                             <i class="bi bi-bookshelf"></i> Каталог
                         </a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'catalog:about' %}">
+                            <i class="bi bi-info-circle"></i> О сайте
+                        </a>
+                    </li>
                     {% if user.is_superuser %}
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'catalog:book_create' %}">
@@ -114,12 +119,11 @@
     </nav>
     {% endblock %}
     
-    
     <!-- Main Content с двухколоночной структурой -->
-    <main class="container my-4">
+    <main class="container-xxl my-4">
         <div class="row">
             <!-- Левая колонка (Основной контент) -->
-            <div class="col-md-8">
+            <div class="col-md-9">
                 {% if messages %}
                 <div class="mb-3">
                     {% for message in messages %}
@@ -135,7 +139,7 @@
             </div>
 
             <!-- Правая колонка (Сайдбар) -->
-            <div class="col-md-4">
+            <div class="col-md-3">
                 {% block sidebar %}
                 
                 <!-- Виджет 1: Общее количество книг -->
@@ -150,7 +154,24 @@
                 {% show_latest_books 3 %}
 
                 <!-- Виджет 3: Облако тегов -->
-                {% show_tag_cloud %}
+                {% if tags %}
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="bi bi-tags"></i> Популярные теги</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex flex-wrap gap-2">
+                            {% for tag in tags %}
+                            <a href="{% url 'catalog:books_by_tag' tag.slug %}" 
+                               class="badge bg-primary text-decoration-none"
+                               style="font-size: 0.9rem; padding: 0.5em 0.8em;">
+                                {{ tag.name }} ({{ tag.num_times }})
+                            </a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
 
                 {% endblock %}
             </div>

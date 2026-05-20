@@ -150,3 +150,24 @@ class Fine(models.Model):
     class Meta:
         verbose_name = "Штраф"
         verbose_name_plural = "Штрафы"
+
+
+class Event(models.Model):
+    title = models.CharField("Название мероприятия", max_length=200)
+    slug = models.SlugField("URL-адрес", max_length=200, unique=True)
+    description = models.TextField("Описание", blank=True)
+    date = models.DateField("Дата")
+    time = models.TimeField("Время")
+    location = models.CharField("Место проведения", max_length=200)
+    image = models.ImageField("Изображение", upload_to='events/', blank=True, null=True)
+
+    class Meta:
+        ordering = ['date']
+        verbose_name = "Мероприятие"
+        verbose_name_plural = "Мероприятия"
+
+    def __str__(self):
+        return self.title
+
+    def get_absolute_url(self):
+        return reverse('catalog:event_detail', kwargs={'slug': self.slug})
