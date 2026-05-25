@@ -30,8 +30,11 @@ def about(request):
 
 def book_list(request):
     query = request.GET.get("q", "").strip()
+    genre_id = request.GET.get("genre", "").strip()
+
     books_qs = Book.objects.filter(is_available=True).select_related('genre')
 
+    # Фильтр по поиску
     if query:
         books_qs = books_qs.filter(
             Q(title__icontains=query) |
@@ -39,19 +42,31 @@ def book_list(request):
             Q(summary__icontains=query)
         )
 
+    # Фильтр по жанру
+    selected_genre = None
+    if genre_id:
+        try:
+            selected_genre = Genre.objects.get(id=genre_id)
+            books_qs = books_qs.filter(genre=selected_genre)
+        except Genre.DoesNotExist:
+            pass
+
+    # Пагинация
     paginator = Paginator(books_qs, 5)
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
-    
-    tags = Tag.objects.annotate(
-        num_times=Count('taggit_taggeditem_items')
-    ).filter(num_times__gt=0).order_by('-num_times')[:10]
+
+    # Жанры для сайдбара (считаем только доступные книги)
+    genres = Genre.objects.annotate(
+        available_count=Count('books', filter=Q(books__is_available=True))
+    ).filter(available_count__gt=0).order_by('name')
 
     context = {
         "books": page_obj,
         "page_obj": page_obj,
         "query": query,
-        "tags": tags,
+        "genres": genres,
+        "selected_genre": selected_genre,  # Для подсветки активного жанра
     }
     return render(request, "catalog/book_list.html", context)
 
