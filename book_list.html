@@ -1,0 +1,56 @@
+{% extends "catalog/base.html" %}
+{% block title %}Каталог книг{% endblock %}
+{% block content %}
+  <h2> Каталог</h2>
+
+  <!-- Форма поиска -->
+  <form method="get" style="margin-bottom: 20px;">
+    <input type="text" name="q" placeholder="Поиск по названию, автору или описанию"
+           value="{{ request.GET.q|default:'' }}" style="padding: 8px; width: 60%;">
+    <button type="submit" style="padding: 8px 12px;">Искать</button>
+  </form>
+
+  <!-- Исправление 1: Используем page_obj (объект пагинации) вместо books -->
+  {% if page_obj %}
+    <!-- Исправление 2: Добавлен класс list-group для Bootstrap -->
+    <ul class="list-group">
+    {% for book in page_obj %}
+      <li class="list-group-item">
+        {% if book.slug %}
+            <h3>
+                <a href="{{ book.get_absolute_url }}" class="text-decoration-none">
+                    {{ book.title }}
+                </a>
+            </h3>
+            <!-- Исправление 3: Выводим имя жанра -->
+            <p>{{ book.author }} | {{ book.genre.name|default:"Без жанра" }}</p>
+        {% else %}
+            <h3>{{ book.title }}</h3>
+            <p class="text-muted">{{ book.author }} | {{ book.genre.name|default:"Без жанра" }}</p>
+            <small class="text-warning">⚠️ Нет slug (ссылка не активна)</small>
+        {% endif %}
+      </li>
+    {% endfor %}
+    </ul>
+  {% else %}
+    <p>Книги не найдены.</p>
+  {% endif %}
+
+  <!-- Пагинация -->
+  {% if page_obj.has_other_pages %}
+    <nav style="margin-top: 20px;">
+      {% if page_obj.has_previous %}
+        <!-- Исправление 4: Используем request.GET.q для сохранения поиска -->
+        <a href="?page=1{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">&laquo; Первая</a>
+        <a href="?page={{ page_obj.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">Предыдущая</a>
+      {% endif %}
+      
+      <span>Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}</span>
+      
+      {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">Следующая</a>
+        <a href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">Последняя &raquo;</a>
+      {% endif %}
+    </nav>
+  {% endif %}
+{% endblock %}
