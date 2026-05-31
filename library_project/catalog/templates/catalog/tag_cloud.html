@@ -7,8 +7,10 @@
         <div class="d-flex flex-wrap gap-2">
             {% for tag in tags %}
             <a href="{% url 'catalog:books_by_tag' tag.slug %}" 
-               class="badge bg-primary text-decoration-none"
-               style="font-size: 0.9rem; padding: 0.5em 0.8em;">
+            class="badge bg-success text-decoration-none"
+            style="font-size: 0.9rem; padding: 0.5em 0.8em; 
+                    color: #ffffff !important; 
+                    background-color: #198754 !important;">
                 {{ tag.name }} ({{ tag.num_times }})
             </a>
             {% endfor %}

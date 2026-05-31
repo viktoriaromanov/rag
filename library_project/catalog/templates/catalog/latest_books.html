@@ -4,7 +4,7 @@
         {% for book in latest_books %}
         <li class="list-group-item">
             {% if book.slug %}
-                <a href="{{ book.get_absolute_url }}" class="text-decoration-none">
+                <a href="{{ book.get_absolute_url }}" class="text-success">
                     {{ book.title }}
                 </a>
             {% else %}

@@ -35,7 +35,10 @@
         <div class="mt-3">
             <strong>Теги:</strong>
             {% for tag in book.tags.all %}
-            <a href="{% url 'catalog:books_by_tag' tag.slug %}" 
+            <a href="{% url 'catalog:books_by_tag' tag.slug %}"
+            style="font-size: 0.9rem; padding: 0.5em 0.8em; 
+                    color: #ffffff !important; 
+                    background-color: #198754 !important;" 
                class="badge bg-secondary text-decoration-none ms-1">
                 {{ tag.name }}
             </a>
