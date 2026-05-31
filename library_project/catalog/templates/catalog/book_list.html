@@ -1,113 +1,154 @@
 {% extends "catalog/base.html" %}
 {% load library_tags %}
 {% block title %}Каталог книг{% endblock %}
+
 {% block content %}
-  <h2>
+<h2>
     {% if selected_genre %}
         Жанр: {{ selected_genre.name }}
     {% else %}
         Каталог
     {% endif %}
-  </h2>
+</h2>
 
-  <!-- Форма поиска -->
-  <form method="get" style="margin-bottom: 20px;">
-    <input type="text" name="q" placeholder="Поиск по названию, автору или описанию"
-           value="{{ request.GET.q|default:'' }}" style="padding: 8px; width: 60%;">
-    <button type="submit" style="padding: 8px 12px;">Искать</button>
-  </form>
-
-  <!-- Список книг -->
-  {% if page_obj %}
-    <ul class="list-group">
-    {% for book in page_obj %}
-      <li class="list-group-item">
-        {% if book.slug %}
-            <h3>
-                <a href="{{ book.get_absolute_url }}" class="text-decoration-none">
-                    {{ book.title }}
-                </a>
-            </h3>
-            <p>{{ book.author }} | {{ book.genre.name|default:"Без жанра" }}</p>
-        {% else %}
-            <h3>{{ book.title }}</h3>
-            <p class="text-muted">{{ book.author }} | {{ book.genre.name|default:"Без жанра" }}</p>
-            <small class="text-warning">️ Нет slug (ссылка не активна)</small>
-        {% endif %}
-      </li>
-    {% endfor %}
-    </ul>
-  {% else %}
-    <p>Книги не найдены.</p>
-  {% endif %}
-
-  <!-- Пагинация -->
-  {% if page_obj.has_other_pages %}
-    <nav style="margin-top: 20px;">
-      {% if page_obj.has_previous %}
-        <a href="?page=1{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if selected_genre %}&genre={{ selected_genre.id }}{% endif %}">&laquo; Первая</a>
-        <a href="?page={{ page_obj.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if selected_genre %}&genre={{ selected_genre.id }}{% endif %}">Предыдущая</a>
-      {% endif %}
-      
-      <span>Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}</span>
-      
-      {% if page_obj.has_next %}
-        <a href="?page={{ page_obj.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if selected_genre %}&genre={{ selected_genre.id }}{% endif %}">Следующая</a>
-        <a href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if selected_genre %}&genre={{ selected_genre.id }}{% endif %}">Последняя &raquo;</a>
-      {% endif %}
-    </nav>
-  {% endif %}
-{% endblock %}
-
-<!-- 👇 ПЕРЕРАБОТАННЫЙ САЙДБАР 👇 -->
-{% block sidebar %}
-    <!-- 1. ФИЛЬТР ПО ЖАНРАМ (НАВЕРХ) -->
-    <div class="card mb-3">
-        <div class="card-header">
-            <h5 class="mb-0"><i class="bi bi-bookmark"></i> Жанры</h5>
-        </div>
-        <ul class="list-group list-group-flush">
-            <li class="list-group-item {% if not selected_genre %}active{% endif %}">
-                <a href="?{% if query %}q={{ query }}{% endif %}" class="text-decoration-none text-reset fw-bold">
-                    Все книги
-                </a>
-            </li>
-            {% for genre in genres %}
-            <li class="list-group-item {% if selected_genre and selected_genre.id == genre.id %}active{% endif %}">
-                <a href="?genre={{ genre.id }}{% if query %}&q={{ query }}{% endif %}" class="text-decoration-none text-reset">
-                    {{ genre.name }}
-                    <span class="badge bg-secondary float-end">{{ genre.available_count }}</span>
-                </a>
-            </li>
-            {% endfor %}
-        </ul>
+<!-- Форма поиска -->
+<form method="get" class="mb-4">
+    <div class="input-group input-group-lg">
+        <input type="text" name="q" class="form-control" 
+               placeholder="Поиск по названию, автору или описанию"
+               value="{{ request.GET.q|default:'' }}">
+        <button class="btn btn-success" type="submit">
+            <i class="bi bi-search"></i> Искать
+        </button>
     </div>
+</form>
 
-    <!-- 2. ОБЛАКО ТЕГОВ (СЕРЕДИНА) -->
-    {% if tags %}
-    <div class="card mb-3">
-        <div class="card-header">
-            <h5 class="mb-0"><i class="bi bi-tags"></i> Популярные теги</h5>
-        </div>
-        <div class="card-body">
-            <div class="d-flex flex-wrap gap-2">
-                {% for tag in tags %}
-                <a href="{% url 'catalog:books_by_tag' tag.slug %}" 
-                   class="badge bg-primary text-decoration-none"
-                   style="font-size: 0.9rem; padding: 0.5em 0.8em;">
-                    {{ tag.name }} ({{ tag.num_times }})
-                </a>
-                {% endfor %}
+<!-- Список книг -->
+{% if page_obj %}
+<div class="row g-3">
+    {% for book in page_obj %}
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <a href="{{ book.get_absolute_url }}" class="text-success text-decoration-none">
+                        {{ book.title }}
+                    </a>
+                </h5>
+                <p class="text-muted mb-2">
+                    <i class="bi bi-person"></i> {{ book.author }}
+                </p>
+                {% if book.genre %}
+                <span class="badge bg-success">{{ book.genre.name }}</span>
+                {% endif %}
             </div>
         </div>
     </div>
-    {% endif %}
+    {% endfor %}
+</div>
 
-    <!-- 3. НОВИНКИ (ВНИЗ) -->
-    <div class="card">
-        <div class="card-header">
-            <h5 class="mb-0">Новинки</h5>
-        </div>
-        {% show_latest_books 3 %}
+<!-- Пагинация -->
+{% if page_obj.has_other_pages %}
+<nav class="mt-4">
+    {% if page_obj.has_previous %}
+    <a href="?page=1{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if selected_genre %}&genre={{ selected_genre.id }}{% endif %}">&laquo; Первая</a>
+    <a href="?page={{ page_obj.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if selected_genre %}&genre={{ selected_genre.id }}{% endif %}">Предыдущая</a>
+    {% endif %}
+    
+    <span class="mx-2">Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}</span>
+    
+    {% if page_obj.has_next %}
+    <a href="?page={{ page_obj.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if selected_genre %}&genre={{ selected_genre.id }}{% endif %}">Следующая</a>
+    <a href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if selected_genre %}&genre={{ selected_genre.id }}{% endif %}">Последняя &raquo;</a>
+    {% endif %}
+</nav>
+{% endif %}
+
+{% else %}
+<p>Книги не найдены.</p>
+{% endif %}
+{% endblock %}
+
+{% block sidebar %}
+<!-- 1. ФИЛЬТР ПО ЖАНРАМ (С ИЕРАРХИЕЙ) -->
+<div class="card mb-3">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-bookmark"></i> Жанры</h5>
     </div>
+    <ul class="list-group list-group-flush">
+        
+        <!-- Ссылка "Все книги" -->
+        <li class="list-group-item" style="background-color: {% if not selected_genre %}#198754 !important{% else %}transparent !important{% endif %};">
+            <a href="?{% if query %}q={{ query }}{% endif %}" 
+               style="color: {% if not selected_genre %}#ffffff !important{% else %}#198754 !important{% endif %}; 
+                      text-decoration: none; 
+                      font-weight: bold !important;">
+                Все книги
+            </a>
+        </li>
+
+        <!-- Цикл по корневым жанрам -->
+        {% for root in root_genres %}
+        
+            <!-- === РОДИТЕЛЬСКИЙ ЖАНР === -->
+            <li class="list-group-item" style="background-color: {% if selected_genre and selected_genre.id == root.id %}#198754 !important{% else %}transparent !important{% endif %};">
+                <a href="?genre={{ root.id }}{% if query %}&q={{ query }}{% endif %}" 
+                   style="color: {% if selected_genre and selected_genre.id == root.id %}#ffffff !important{% else %}#198754 !important{% endif %}; 
+                          text-decoration: none;
+                          font-weight: bold !important;">
+                    {{ root.name }}
+                    <span class="badge" style="background-color: {% if selected_genre and selected_genre.id == root.id %}#ffffff !important; color: #198754 !important{% else %}#198754 !important; color: #ffffff !important{% endif %};">
+                        {{ root.total_count }}
+                    </span>
+                </a>
+            </li>
+
+            <!-- === ПОДЖАНРЫ (Вложенный цикл) === -->
+            {% for child in root.visible_children %}
+            <li class="list-group-item" style="background-color: {% if selected_genre and selected_genre.id == child.id %}#198754 !important{% else %}transparent !important{% endif %};">
+                <a href="?genre={{ child.id }}{% if query %}&q={{ query }}{% endif %}" 
+                   style="color: {% if selected_genre and selected_genre.id == child.id %}#ffffff !important{% else %}#198754 !important{% endif %}; 
+                          text-decoration: none;
+                          font-weight: normal !important;
+                          padding-left: 25px;"> <!-- Отступ для поджанра -->
+                    
+                    ↳ {{ child.name }}
+                    <span class="badge" style="background-color: {% if selected_genre and selected_genre.id == child.id %}#ffffff !important; color: #198754 !important{% else %}#198754 !important; color: #ffffff !important{% endif %};">
+                        {{ child.direct_count }}
+                    </span>
+                </a>
+            </li>
+            {% endfor %}
+
+        {% endfor %}
+    </ul>
+</div>
+
+<div class="card mb-3">
+    <div class="card-header">
+        <h5 class="mb-0">Новинки</h5>
+    </div>
+    {% show_latest_books 3 %}
+</div>
+
+{% if tags %}
+<div class="card mb-3">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-tags"></i> Популярные теги</h5>
+    </div>
+    <div class="card-body">
+        <div class="d-flex flex-wrap gap-2">
+            {% for tag in tags %}
+            <a href="{% url 'catalog:books_by_tag' tag.slug %}" 
+            class="badge bg-success text-decoration-none"
+            style="font-size: 0.9rem; padding: 0.5em 0.8em; 
+                    color: #ffffff !important; 
+                    background-color: #198754 !important;">
+                {{ tag.name }} ({{ tag.num_times }})
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
 {% endblock %}

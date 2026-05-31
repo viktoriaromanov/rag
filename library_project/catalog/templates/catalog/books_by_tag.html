@@ -10,7 +10,7 @@
         </ol>
     </nav>
     
-    <h2> Книги с тегом "<span class="badge bg-primary">{{ tag.name }}</span>"</h2>
+    <h2> Книги с тегом "<span class="badge bg-success">{{ tag.name }}</span>"</h2>
     <p class="text-muted">Найдено книг: {{ page_obj.paginator.count }}</p>
 </div>
 
@@ -19,7 +19,7 @@
     <div class="input-group">
         <input type="text" name="q" class="form-control" placeholder="Поиск по названию, автору или описанию" 
                value="{{ request.GET.q|default:'' }}">
-        <button class="btn btn-primary" type="submit">
+        <button class="btn btn-success" type="submit">
             <i class="bi bi-search"></i> Искать
         </button>
         {% if request.GET.q %}
@@ -47,15 +47,15 @@
             {% if book.tags.all %}
             <div class="mb-2">
                 {% for tag in book.tags.all %}
-                <a href="{% url 'catalog:books_by_tag' tag.slug %}" class="badge bg-secondary text-decoration-none me-1">
+                <a href="{% url 'catalog:books_by_tag' tag.slug %}" class="badge" style="background-color: #198754 !important; color: #ffffff !important;"">
                     {{ tag.name }}
                 </a>
                 {% endfor %}
             </div>
             {% endif %}
             
-            <a href="{{ book.get_absolute_url }}" class="btn btn-sm btn-outline-primary">
-                <i class="bi bi-book"></i> Подробнее
+            <a href="{{ book.get_absolute_url }}" class="btn btn-sm btn-success">
+                <i class="bi bi-book" style="color: #ffffff !important;"></i> Подробнее
             </a>
         </div>
     </div>

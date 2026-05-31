@@ -9,7 +9,7 @@
                 {% if profile.avatar %}
                     <img src="{{ profile.avatar.url }}" alt="Аватар" class="avatar-medium mb-3">
                 {% else %}
-                    <div class="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 150px; height: 150px; font-size: 4rem;">
+                    <div class="bg-success text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 150px; height: 150px; font-size: 4rem;">
                         <i class="bi bi-person"></i>
                     </div>
                 {% endif %}
@@ -58,7 +58,7 @@
                 {% endif %}
             </div>
             <div class="card-footer">
-                <a href="{% url 'accounts:profile_edit' %}" class="btn btn-primary">
+                <a href="{% url 'accounts:profile_edit' %}" class="btn btn-succes">
                     <i class="bi bi-pencil"></i> Редактировать профиль
                 </a>
             </div>
@@ -70,7 +70,7 @@
                 <h5 class="mb-0"><i class="bi bi-link-45deg"></i> Быстрые ссылки</h5>
             </div>
             <div class="card-body">
-                <a href="{% url 'catalog:reader_profile' %}" class="btn btn-outline-primary me-2">
+                <a href="{% url 'catalog:reader_profile' %}" class="btn btn-outline-success me-2">
                     <i class="bi bi-card-list"></i> Мои бронирования
                 </a>
                 <a href="{% url 'catalog:book_list' %}" class="btn btn-outline-secondary">

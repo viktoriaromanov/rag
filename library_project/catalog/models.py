@@ -64,6 +64,16 @@ class Book(models.Model):
 class Genre(models.Model):
     name = models.CharField("Название жанра", max_length=100, unique=True)
     description = models.TextField("Описание", blank=True)
+    
+    parent = models.ForeignKey(
+        "self", 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True, 
+        verbose_name="Родительский жанр",
+        related_name="subgenres"
+    )
+
 
     def __str__(self):
         return self.name

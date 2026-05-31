@@ -11,13 +11,13 @@
                 {% if user.profile.avatar %}
                     <img src="{{ user.profile.avatar.url }}" alt="Аватар" class="rounded-circle mb-3" style="width: 150px; height: 150px; object-fit: cover;">
                 {% else %}
-                    <div class="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 150px; height: 150px; font-size: 4rem;">
+                    <div class="bg-success text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 150px; height: 150px; font-size: 4rem;">
                         <i class="bi bi-person"></i>
                     </div>
                 {% endif %}
                 <h5>{{ user.get_full_name|default:user.username }}</h5>
                 <p class="text-muted">{{ user.email }}</p>
-                <a href="{% url 'accounts:profile_edit' %}" class="btn btn-sm btn-outline-primary">
+                <a href="{% url 'accounts:profile_edit' %}" class="btn btn-sm btn-succes">
                     <i class="bi bi-pencil"></i> Редактировать профиль
                 </a>
             </div>
@@ -38,7 +38,7 @@
                         <div class="d-flex justify-content-between align-items-start">
                             <div>
                                 <h6 class="mb-1">
-                                    <a href="{{ res.book.get_absolute_url }}" class="text-decoration-none">
+                                    <a href="{{ res.book.get_absolute_url }}" class="text-success">
                                         {{ res.book.title }}
                                     </a>
                                 </h6>

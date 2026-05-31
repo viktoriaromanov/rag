@@ -47,29 +47,70 @@ def book_list(request):
     if genre_id:
         try:
             selected_genre = Genre.objects.get(id=genre_id)
-            books_qs = books_qs.filter(genre=selected_genre)
+            
+            # 1. Берем ID выбранного жанра
+            genre_ids = [selected_genre.id]
+            
+            # 2. Находим все поджанры этого жанра
+            subgenres = Genre.objects.filter(parent=selected_genre)
+            if subgenres.exists():
+                # Добавляем ID поджанров в список
+                genre_ids.extend(subgenres.values_list('id', flat=True))
+            
+            # 3. Фильтруем книги по списку ID (книга должна быть в выбранном жанре ИЛИ в поджанре)
+            books_qs = books_qs.filter(genre__id__in=genre_ids)
+            
         except Genre.DoesNotExist:
             pass
+    
+    all_genres = Genre.objects.annotate(
+        direct_count=Count('books', filter=Q(books__is_available=True))
+    )
+
+    root_genres = []
+    
+    # Перебираем только корневые жанры (у которых нет родителя)
+    for root in all_genres.filter(parent__isnull=True).order_by('name'):
+        
+        # Находим поджанры этого корня
+        children = all_genres.filter(parent=root)
+        
+        # Считаем общее количество книг (свои + поджанры)
+        children_count = sum([c.direct_count for c in children])
+        root.total_count = root.direct_count + children_count
+        
+        # Сохраняем список поджанров, у которых есть книги
+        root.visible_children = [c for c in children if c.direct_count > 0]
+        
+        # Добавляем корень в список, если у него есть книги (в нем или в поджанрах)
+        if root.total_count > 0:
+            root_genres.append(root)
 
     # Пагинация
-    paginator = Paginator(books_qs, 5)
+    paginator = Paginator(books_qs, 6)
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
 
     # Жанры для сайдбара (считаем только доступные книги)
+        # Жанры для сайдбара
     genres = Genre.objects.annotate(
         available_count=Count('books', filter=Q(books__is_available=True))
     ).filter(available_count__gt=0).order_by('name')
 
+    # Теги (ПРАВИЛЬНОЕ ИМЯ СВЯЗИ!)
+    tags = Tag.objects.annotate(
+        num_times=Count('taggit_taggeditem_items')
+    ).filter(num_times__gt=0).order_by('-num_times')[:10]
+
     context = {
-        "books": page_obj,
         "page_obj": page_obj,
         "query": query,
-        "genres": genres,
-        "selected_genre": selected_genre,  # Для подсветки активного жанра
+        "root_genres": root_genres,
+        #"genres": genres,
+        "selected_genre": selected_genre,
+        "tags": tags,
     }
     return render(request, "catalog/book_list.html", context)
-
 
 def books_by_tag(request, tag_slug):
     """Отображение книг с определённым тегом"""
